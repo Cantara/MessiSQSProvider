@@ -1,0 +1,2 @@
+no.cantara.messi.sqs.SQSMessiClientFactory
+no.cantara.messi.sqs.simulator.SQSSimulatorMessiClientFactory
