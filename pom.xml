@@ -14,6 +14,7 @@
 
     <properties>
         <module.build.sourceEncoding>UTF-8</module.build.sourceEncoding>
+        <protobuf-java.version>3.19.1</protobuf-java.version>
     </properties>
 
     <licenses>
@@ -45,7 +46,7 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
-                <version>2.17.50</version>
+                <version>2.17.74</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -60,7 +61,7 @@
         <dependency>
             <groupId>no.cantara.messi</groupId>
             <artifactId>messi-sdk</artifactId>
-            <version>0.3-SNAPSHOT</version>
+            <version>0.4</version>
         </dependency>
         <dependency>
             <groupId>no.cantara.config</groupId>
@@ -80,17 +81,17 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.17.3</version>
+            <version>${protobuf-java.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java-util</artifactId>
-            <version>3.17.3</version>
+            <version>${protobuf-java.version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.5</version>
+            <version>1.2.6</version>
             <scope>test</scope>
         </dependency>
         <dependency>
