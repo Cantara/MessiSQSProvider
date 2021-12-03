@@ -31,15 +31,20 @@ public class SQSMessiConsumer implements MessiConsumer {
     final String queueUrl;
     final AtomicBoolean closed = new AtomicBoolean();
 
-    public SQSMessiConsumer(SqsClient sqsClient, String queueNamePrefix, String topic) {
+    public SQSMessiConsumer(SqsClient sqsClient, String queueNamePrefix, String topic, boolean autocreateQueue) {
         this.sqsClient = sqsClient;
         this.queueNamePrefix = queueNamePrefix;
         this.topic = topic;
-        this.queueUrl = SQSUtils.createQueue(sqsClient, toQueueName(topic));
+        String queueName = toQueueName(topic);
+        if (autocreateQueue) {
+            this.queueUrl = SQSUtils.createQueue(sqsClient, queueName);
+        } else {
+            this.queueUrl = SQSUtils.getQueueUrl(sqsClient, queueName);
+        }
     }
 
     private String toQueueName(String topic) {
-        return queueNamePrefix + "/" + topic;
+        return queueNamePrefix + topic;
     }
 
     @Override

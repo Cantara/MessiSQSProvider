@@ -37,10 +37,11 @@ public class SQSMessiClientFactory implements MessiClientFactory {
         if (secretAccessKey == null) {
             throw new IllegalArgumentException("Missing configuration property: credentials.secret");
         }
-        String queueNamePrefix = configuration.get("queue-name.prefix");
+        String queueNamePrefix = configuration.get("queue.prefix");
         if (queueNamePrefix == null) {
             throw new IllegalArgumentException("Missing configuration property: queue-name.prefix");
         }
+        boolean autocreateQueue = configuration.asBoolean("queue.autocreate", false);
 
         AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
         SqsClient sqsClient = SqsClient.builder()
@@ -50,6 +51,6 @@ public class SQSMessiClientFactory implements MessiClientFactory {
                 .region(Region.of(region))
                 .build();
 
-        return new SQSMessiClient(sqsClient, queueNamePrefix);
+        return new SQSMessiClient(sqsClient, queueNamePrefix, autocreateQueue);
     }
 }

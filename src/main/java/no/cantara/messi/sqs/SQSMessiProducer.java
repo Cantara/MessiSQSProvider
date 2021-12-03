@@ -30,16 +30,20 @@ public class SQSMessiProducer implements MessiProducer {
     private final String topic;
     private final String queueUrl;
 
-    public SQSMessiProducer(SqsClient sqsClient, String queueNamePrefix, String topic) {
+    public SQSMessiProducer(SqsClient sqsClient, String queueNamePrefix, String topic, boolean autocreateQueue) {
         this.sqsClient = sqsClient;
         this.queueNamePrefix = queueNamePrefix;
         this.topic = topic;
         String queueName = toQueueName(topic);
-        this.queueUrl = SQSUtils.createQueue(sqsClient, queueName);
+        if (autocreateQueue) {
+            this.queueUrl = SQSUtils.createQueue(sqsClient, queueName);
+        } else {
+            this.queueUrl = SQSUtils.getQueueUrl(sqsClient, queueName);
+        }
     }
 
     private String toQueueName(String topic) {
-        return queueNamePrefix + "/" + topic;
+        return queueNamePrefix + topic;
     }
 
     @Override

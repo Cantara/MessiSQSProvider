@@ -20,6 +20,6 @@ public class SQSSimulatorMessiClientFactory implements MessiClientFactory {
     @Override
     public SQSMessiClient create(ApplicationProperties configuration) {
         SqsClient sqsClient = new SqsClientSimulator();
-        return new SQSMessiClient(sqsClient, "messi-sqs-simulator");
+        return new SQSMessiClient(sqsClient, "messi-sqs-simulator", true);
     }
 }

@@ -19,14 +19,16 @@ public class SQSMessiClient implements MessiClient {
 
     final SqsClient sqsClient;
     final String queueNamePrefix;
+    final boolean autocreateQueue;
 
     final AtomicBoolean closed = new AtomicBoolean();
     final CopyOnWriteArrayList<SQSMessiConsumer> consumers = new CopyOnWriteArrayList<>();
     final CopyOnWriteArrayList<SQSMessiProducer> producers = new CopyOnWriteArrayList<>();
 
-    public SQSMessiClient(SqsClient sqsClient, String queueNamePrefix) {
+    public SQSMessiClient(SqsClient sqsClient, String queueNamePrefix, boolean autocreateQueue) {
         this.sqsClient = sqsClient;
         this.queueNamePrefix = queueNamePrefix;
+        this.autocreateQueue = autocreateQueue;
     }
 
     @Override
@@ -34,7 +36,7 @@ public class SQSMessiClient implements MessiClient {
         if (closed.get()) {
             throw new MessiClosedException();
         }
-        SQSMessiProducer producer = new SQSMessiProducer(sqsClient, queueNamePrefix, topic);
+        SQSMessiProducer producer = new SQSMessiProducer(sqsClient, queueNamePrefix, topic, autocreateQueue);
         producers.add(producer);
         return producer;
     }
@@ -44,7 +46,7 @@ public class SQSMessiClient implements MessiClient {
         if (closed.get()) {
             throw new MessiClosedException();
         }
-        SQSMessiConsumer consumer = new SQSMessiConsumer(sqsClient, queueNamePrefix, topic);
+        SQSMessiConsumer consumer = new SQSMessiConsumer(sqsClient, queueNamePrefix, topic, autocreateQueue);
         consumers.add(consumer);
         return consumer;
     }
