@@ -2,10 +2,12 @@ package no.cantara.messi.sqs;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
+import de.huxhorn.sulky.ulid.ULID;
 import no.cantara.messi.api.MessiClosedException;
 import no.cantara.messi.api.MessiProducer;
 import no.cantara.messi.api.MessiULIDUtils;
 import no.cantara.messi.protos.MessiMessage;
+import no.cantara.messi.protos.MessiUlid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SQSMessiProducer implements MessiProducer {
 
@@ -29,6 +32,8 @@ public class SQSMessiProducer implements MessiProducer {
     private final String queueNamePrefix;
     private final String topic;
     private final String queueUrl;
+    private final ULID ulid = new ULID();
+    private final AtomicReference<ULID.Value> prevUlid = new AtomicReference<>(ulid.nextValue());
 
     public SQSMessiProducer(SqsClient sqsClient, String queueNamePrefix, String topic, boolean autocreateQueue) {
         this.sqsClient = sqsClient;
@@ -70,6 +75,21 @@ public class SQSMessiProducer implements MessiProducer {
             List<SendMessageBatchRequestEntry> entries = new ArrayList<>(messiMessages.length);
             for (int i = 0; i < remainingMessages.size(); i++) {
                 MessiMessage messiMessage = remainingMessages.get(i);
+
+                ULID.Value ulid;
+                if (messiMessage.hasUlid()) {
+                    ulid = new ULID.Value(messiMessage.getUlid().getMsb(), messiMessage.getUlid().getLsb());
+                } else {
+                    ulid = MessiULIDUtils.nextMonotonicUlid(this.ulid, prevUlid.get());
+                    messiMessage = messiMessage.toBuilder()
+                            .setUlid(MessiUlid.newBuilder()
+                                    .setMsb(ulid.getMostSignificantBits())
+                                    .setLsb(ulid.getLeastSignificantBits())
+                                    .build())
+                            .build();
+                }
+                prevUlid.set(ulid);
+
                 String messiMessageJson;
                 try {
                     messiMessageJson = JsonFormat.printer().print(messiMessage);
