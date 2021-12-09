@@ -7,7 +7,6 @@ import no.cantara.messi.api.MessiProducer;
 import no.cantara.messi.api.MessiQueuingConsumer;
 import no.cantara.messi.api.MessiShard;
 import no.cantara.messi.api.MessiTopic;
-import no.cantara.messi.memory.MemoryMessiCursor;
 import no.cantara.messi.protos.MessiMessage;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
@@ -121,12 +120,12 @@ public class SQSMessiTopic implements MessiTopic {
         }
 
         @Override
-        public MemoryMessiCursor cursorHead() {
+        public MessiCursor cursorHead() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public MessiCursor cursorAtTimeHorizon() {
+        public MessiCursor cursorAtTrimHorizon() {
             throw new UnsupportedOperationException();
         }
 
