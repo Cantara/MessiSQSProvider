@@ -3,7 +3,9 @@ package no.cantara.messi.sqs;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import no.cantara.messi.api.MessiClosedException;
-import no.cantara.messi.api.MessiConsumer;
+import no.cantara.messi.api.MessiQueuingAsyncMessageHandle;
+import no.cantara.messi.api.MessiQueuingConsumer;
+import no.cantara.messi.api.MessiQueuingMessageHandle;
 import no.cantara.messi.protos.MessiMessage;
 import no.cantara.messi.protos.MessiProvider;
 import org.slf4j.Logger;
@@ -13,17 +15,19 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse;
 import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SQSMessiConsumer implements MessiConsumer {
+public class SQSMessiQueuingConsumer implements MessiQueuingConsumer {
 
-    private static Logger log = LoggerFactory.getLogger(SQSMessiConsumer.class);
+    private static Logger log = LoggerFactory.getLogger(SQSMessiQueuingConsumer.class);
 
     final SqsClient sqsClient;
     final String queueNamePrefix;
@@ -31,7 +35,7 @@ public class SQSMessiConsumer implements MessiConsumer {
     final String queueUrl;
     final AtomicBoolean closed = new AtomicBoolean();
 
-    public SQSMessiConsumer(SqsClient sqsClient, String queueNamePrefix, String topic, boolean autocreateQueue) {
+    public SQSMessiQueuingConsumer(SqsClient sqsClient, String queueNamePrefix, String topic, boolean autocreateQueue) {
         this.sqsClient = sqsClient;
         this.queueNamePrefix = queueNamePrefix;
         this.topic = topic;
@@ -53,11 +57,23 @@ public class SQSMessiConsumer implements MessiConsumer {
     }
 
     @Override
-    public MessiMessage receive(int timeout, TimeUnit timeUnit) throws InterruptedException, MessiClosedException {
+    public MessiQueuingMessageHandle receive(int timeout, TimeUnit timeUnit) throws InterruptedException, MessiClosedException {
         if (closed.get()) {
             throw new MessiClosedException();
         }
 
+        Message message = doReceive(timeout, timeUnit);
+
+        if (message == null) {
+            return null;
+        }
+
+        MessiMessage messiMessage = toMessiMessage(message);
+
+        return new SQSMessiQueuingMessageHandle(messiMessage, message.receiptHandle(), this::ackMessage);
+    }
+
+    private Message doReceive(int timeout, TimeUnit timeUnit) throws InterruptedException {
         long startTime = System.currentTimeMillis();
 
         int waitTimeSeconds = (int) timeUnit.toSeconds(timeout);
@@ -90,27 +106,46 @@ public class SQSMessiConsumer implements MessiConsumer {
 
         Message message = messages.get(0);
 
+        return message;
+    }
+
+    private MessiMessage toMessiMessage(Message message) {
         MessiMessage.Builder builder = MessiMessage.newBuilder();
         try {
             JsonFormat.parser().merge(message.body(), builder);
         } catch (InvalidProtocolBufferException e) {
             throw new RuntimeException(e);
         }
+        Instant publishedAt = null;
+        try {
+            if (message.hasMessageAttributes()) {
+                MessageAttributeValue publishedAtAttributeValue = message.messageAttributes().get("published_at");
+                publishedAt = Instant.parse(publishedAtAttributeValue.stringValue());
+            }
+        } catch (RuntimeException e) {
+            log.warn("Unable to extract publishedAt SQS message-attribute");
+        }
+        if (!builder.hasFirstProvider()) {
+            builder.setFirstProvider(MessiProvider.newBuilder()
+                    .setTechnology("SQS")
+                    .setPublishedTimestamp(publishedAt == null ? 0 : publishedAt.toEpochMilli())
+                    .setSequenceNumber(message.messageId())
+                    .build());
+        }
         MessiMessage messiMessage = builder
                 .setProvider(MessiProvider.newBuilder()
+                        .setTechnology("SQS")
+                        .setPublishedTimestamp(publishedAt == null ? 0 : publishedAt.toEpochMilli())
                         .setSequenceNumber(message.messageId())
                         .build())
                 .build();
-
-        ackMessage(message);
-
         return messiMessage;
     }
 
-    void ackMessage(Message message) {
+    void ackMessage(String receiptHandle) {
         DeleteMessageRequest request = DeleteMessageRequest.builder()
                 .queueUrl(queueUrl)
-                .receiptHandle(message.receiptHandle())
+                .receiptHandle(receiptHandle)
                 .build();
         DeleteMessageResponse response = sqsClient.deleteMessage(request);
         SdkHttpResponse sdkHttpResponse = response.sdkHttpResponse();
@@ -121,32 +156,26 @@ public class SQSMessiConsumer implements MessiConsumer {
     }
 
     @Override
-    public CompletableFuture<? extends MessiMessage> receiveAsync() {
+    public CompletableFuture<? extends MessiQueuingAsyncMessageHandle> receiveAsync() {
         if (closed.get()) {
             throw new MessiClosedException();
         }
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return receive(5, TimeUnit.MINUTES);
+                Message message = doReceive(5, TimeUnit.MINUTES);
+
+                if (message == null) {
+                    return null;
+                }
+
+                MessiMessage messiMessage = toMessiMessage(message);
+
+                return new SQSMessiQueuingAsyncMessageHandle(messiMessage, message.receiptHandle(), this::ackMessage);
+
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    @Override
-    public void seek(long timestamp) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SQSMessiCursor cursorAt(MessiMessage messiMessage) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SQSMessiCursor cursorAfter(MessiMessage messiMessage) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

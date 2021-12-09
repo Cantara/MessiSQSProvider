@@ -4,13 +4,15 @@ import no.cantara.messi.api.MessiClient;
 import no.cantara.messi.api.MessiClosedException;
 import no.cantara.messi.api.MessiCursor;
 import no.cantara.messi.api.MessiMetadataClient;
+import no.cantara.messi.api.MessiTopic;
 import no.cantara.messi.protos.MessiMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SQSMessiClient implements MessiClient {
@@ -22,8 +24,8 @@ public class SQSMessiClient implements MessiClient {
     final boolean autocreateQueue;
 
     final AtomicBoolean closed = new AtomicBoolean();
-    final CopyOnWriteArrayList<SQSMessiConsumer> consumers = new CopyOnWriteArrayList<>();
-    final CopyOnWriteArrayList<SQSMessiProducer> producers = new CopyOnWriteArrayList<>();
+
+    final Map<String, SQSMessiTopic> topicByName = new ConcurrentHashMap<>();
 
     public SQSMessiClient(SqsClient sqsClient, String queueNamePrefix, boolean autocreateQueue) {
         this.sqsClient = sqsClient;
@@ -32,39 +34,18 @@ public class SQSMessiClient implements MessiClient {
     }
 
     @Override
-    public SQSMessiProducer producer(String topic) {
-        if (closed.get()) {
-            throw new MessiClosedException();
-        }
-        SQSMessiProducer producer = new SQSMessiProducer(sqsClient, queueNamePrefix, topic, autocreateQueue);
-        producers.add(producer);
-        return producer;
+    public MessiTopic topicOf(String name) {
+        return topicByName.computeIfAbsent(name, topicName -> new SQSMessiTopic(topicName, sqsClient, queueNamePrefix, autocreateQueue));
     }
 
     @Override
-    public SQSMessiConsumer consumer(String topic, MessiCursor cursor) {
-        if (closed.get()) {
-            throw new MessiClosedException();
-        }
-        SQSMessiConsumer consumer = new SQSMessiConsumer(sqsClient, queueNamePrefix, topic, autocreateQueue);
-        consumers.add(consumer);
-        return consumer;
-    }
-
-    @Override
-    public SQSMessiCursor.Builder cursorOf() {
-        if (closed.get()) {
-            throw new MessiClosedException();
-        }
-        return new SQSMessiCursor.Builder();
+    public MessiCursor.Builder cursorOf() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public MessiMessage lastMessage(String topic, String shardId) throws MessiClosedException {
-        if (closed.get()) {
-            throw new MessiClosedException();
-        }
-        throw new UnsupportedOperationException("TODO");
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -80,25 +61,15 @@ public class SQSMessiClient implements MessiClient {
     @Override
     public void close() {
         closed.set(true);
-        try {
-            for (SQSMessiConsumer consumer : consumers) {
-                consumer.close();
-            }
-            consumers.clear();
-            for (SQSMessiProducer producer : producers) {
-                producer.close();
-            }
-            producers.clear();
-        } finally {
-            sqsClient.close();
+        for (SQSMessiTopic topic : topicByName.values()) {
+            topic.close();
         }
+        topicByName.clear();
+        sqsClient.close();
     }
 
     @Override
     public MessiMetadataClient metadata(String topic) {
-        if (closed.get()) {
-            throw new MessiClosedException();
-        }
         throw new UnsupportedOperationException("SQS provider does not support metadata-client");
     }
 }

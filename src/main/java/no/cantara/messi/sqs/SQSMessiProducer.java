@@ -12,13 +12,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResultEntry;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -72,6 +76,8 @@ public class SQSMessiProducer implements MessiProducer {
 
         for (int x = 1; remainingMessages.size() > 0; x++) {
 
+            String publishedAt = Instant.now().toString();
+
             List<SendMessageBatchRequestEntry> entries = new ArrayList<>(messiMessages.length);
             for (int i = 0; i < remainingMessages.size(); i++) {
                 MessiMessage messiMessage = remainingMessages.get(i);
@@ -96,8 +102,14 @@ public class SQSMessiProducer implements MessiProducer {
                 } catch (InvalidProtocolBufferException e) {
                     throw new RuntimeException(e);
                 }
+                Map<String, MessageAttributeValue> sqsMessageAttributes = new LinkedHashMap<>();
+                sqsMessageAttributes.put("published_at", MessageAttributeValue.builder()
+                        .dataType("String")
+                        .stringValue(publishedAt)
+                        .build());
                 entries.add(SendMessageBatchRequestEntry.builder()
                         .id(String.valueOf(i)) // batch-id
+                        .messageAttributes(sqsMessageAttributes)
                         .messageBody(messiMessageJson)
                         .build());
             }
