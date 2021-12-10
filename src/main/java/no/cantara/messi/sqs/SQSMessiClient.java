@@ -35,7 +35,7 @@ public class SQSMessiClient implements MessiClient {
 
     @Override
     public MessiTopic topicOf(String name) {
-        return topicByName.computeIfAbsent(name, topicName -> new SQSMessiTopic(topicName, sqsClient, queueNamePrefix, autocreateQueue));
+        return topicByName.computeIfAbsent(name, topicName -> new SQSMessiTopic(this, topicName, sqsClient, queueNamePrefix, autocreateQueue));
     }
 
     @Override

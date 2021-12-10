@@ -29,13 +29,15 @@ public class SQSMessiQueuingConsumer implements MessiQueuingConsumer {
 
     private static Logger log = LoggerFactory.getLogger(SQSMessiQueuingConsumer.class);
 
+    final SQSMessiTopic.SQSMessiShard messiShard;
     final SqsClient sqsClient;
     final String queueNamePrefix;
     final String topic;
     final String queueUrl;
     final AtomicBoolean closed = new AtomicBoolean();
 
-    public SQSMessiQueuingConsumer(SqsClient sqsClient, String queueNamePrefix, String topic, boolean autocreateQueue) {
+    public SQSMessiQueuingConsumer(SQSMessiTopic.SQSMessiShard messiShard, SqsClient sqsClient, String queueNamePrefix, String topic, boolean autocreateQueue) {
+        this.messiShard = messiShard;
         this.sqsClient = sqsClient;
         this.queueNamePrefix = queueNamePrefix;
         this.topic = topic;
@@ -176,6 +178,11 @@ public class SQSMessiQueuingConsumer implements MessiQueuingConsumer {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    @Override
+    public SQSMessiTopic.SQSMessiShard shard() {
+        return messiShard;
     }
 
     @Override

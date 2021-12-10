@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SQSMessiTopic implements MessiTopic {
 
+    final SQSMessiClient messiClient;
     final String name;
     final SqsClient sqsClient;
     final String queueNamePrefix;
@@ -25,7 +26,8 @@ public class SQSMessiTopic implements MessiTopic {
     final CopyOnWriteArrayList<SQSMessiQueuingConsumer> consumers = new CopyOnWriteArrayList<>();
     final MessiShard theShard = new SQSMessiShard();
 
-    public SQSMessiTopic(String name, SqsClient sqsClient, String queueNamePrefix, boolean autocreateQueue) {
+    public SQSMessiTopic(SQSMessiClient messiClient, String name, SqsClient sqsClient, String queueNamePrefix, boolean autocreateQueue) {
+        this.messiClient = messiClient;
         this.name = name;
         this.sqsClient = sqsClient;
         this.queueNamePrefix = queueNamePrefix;
@@ -58,6 +60,11 @@ public class SQSMessiTopic implements MessiTopic {
     }
 
     @Override
+    public SQSMessiClient client() {
+        return messiClient;
+    }
+
+    @Override
     public boolean isClosed() {
         return closed.get();
     }
@@ -84,7 +91,7 @@ public class SQSMessiTopic implements MessiTopic {
 
         @Override
         public MessiQueuingConsumer queuingConsumer() {
-            SQSMessiQueuingConsumer consumer = new SQSMessiQueuingConsumer(sqsClient, queueNamePrefix, name, autocreateQueue);
+            SQSMessiQueuingConsumer consumer = new SQSMessiQueuingConsumer(this, sqsClient, queueNamePrefix, name, autocreateQueue);
             consumers.add(consumer);
             return consumer;
         }
@@ -130,7 +137,12 @@ public class SQSMessiTopic implements MessiTopic {
         }
 
         @Override
-        public void close() throws Exception {
+        public SQSMessiTopic topic() {
+            return SQSMessiTopic.this;
+        }
+
+        @Override
+        public void close() {
         }
     }
 }
