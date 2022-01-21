@@ -225,6 +225,7 @@ public class SqsClientSimulator implements SqsClient {
             queue.primary.put(messageId, message);
             successfulEntries.add(SendMessageBatchResultEntry.builder()
                     .messageId(messageIdStr)
+                    .id(entry.id())
                     .build());
         }
         SendMessageBatchResponse.Builder responseBuilder = SendMessageBatchResponse.builder();
