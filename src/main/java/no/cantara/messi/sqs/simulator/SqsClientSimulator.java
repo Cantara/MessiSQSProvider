@@ -47,10 +47,13 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -76,6 +79,11 @@ public class SqsClientSimulator implements SqsClient {
 
     private static Logger log = LoggerFactory.getLogger(SqsClientSimulator.class);
 
+    final AtomicLong totalMessagesSentCount = new AtomicLong(0);
+    final AtomicLong totalMessagesDeletedCount = new AtomicLong(0);
+    final AtomicLong totalMessagesDeliveredCount = new AtomicLong(0);
+    final NavigableMap<Long, CountDownLatch> atLeastSentTotalMessagesCountListeners = new ConcurrentSkipListMap<>();
+
     final Map<String, SimulatedSqsQueue> queueByUrl = new ConcurrentHashMap<>();
 
     @Override
@@ -89,6 +97,32 @@ public class SqsClientSimulator implements SqsClient {
             entry.getValue().close();
         }
         queueByUrl.clear();
+    }
+
+    public long getTotalMessagesSentCount() {
+        return totalMessagesSentCount.get();
+    }
+
+    public long getTotalMessagesDeletedCount() {
+        return totalMessagesDeletedCount.get();
+    }
+
+    public long getTotalMessagesDeliveredCount() {
+        return totalMessagesDeliveredCount.get();
+    }
+
+    public void waitForTotalMessagesSentCountAtLeast(long threshold, int timeout, TimeUnit timeoutUnit) throws InterruptedException {
+        if (threshold <= 0) {
+            return;
+        }
+        if (totalMessagesSentCount.get() >= threshold) {
+            return; // already past threshold
+        }
+        CountDownLatch countDownLatch = atLeastSentTotalMessagesCountListeners.computeIfAbsent(threshold, t -> new CountDownLatch(1));
+        if (totalMessagesSentCount.get() >= threshold) { // re-check to avoid race-condition
+            return; // already past threshold - leave count-down-latch - it will be signalled and removed by next send action
+        }
+        countDownLatch.await(timeout, timeoutUnit);
     }
 
     @Override
@@ -223,10 +257,17 @@ public class SqsClientSimulator implements SqsClient {
                     .body(entry.messageBody())
                     .build();
             queue.primary.put(messageId, message);
+            log.trace("PUT message into queue url: {}, message: {}", sendMessageBatchRequest.queueUrl(), entry.messageBody());
             successfulEntries.add(SendMessageBatchResultEntry.builder()
                     .messageId(messageIdStr)
                     .id(entry.id())
                     .build());
+            long currentTotalSentCount = totalMessagesSentCount.incrementAndGet();
+            NavigableMap<Long, CountDownLatch> relevantListenersSubmap = atLeastSentTotalMessagesCountListeners.subMap(1L, true, currentTotalSentCount, true);
+            for (CountDownLatch cdl : relevantListenersSubmap.values()) {
+                cdl.countDown();
+            }
+            relevantListenersSubmap.clear();
         }
         SendMessageBatchResponse.Builder responseBuilder = SendMessageBatchResponse.builder();
         responseBuilder.sdkHttpResponse(SdkHttpResponse.builder()
@@ -262,6 +303,7 @@ public class SqsClientSimulator implements SqsClient {
             Message message = firstEntry.getValue();
             queue.delivered.put(firstEntry.getKey(), message);
             responseBuilder.messages(message);
+            totalMessagesDeliveredCount.incrementAndGet();
         } else {
             responseBuilder.messages(Collections.emptyList());
         }
@@ -278,6 +320,7 @@ public class SqsClientSimulator implements SqsClient {
         if (removedMessage == null) {
             throw new IllegalArgumentException("Non-existed message: " + deleteMessageRequest.receiptHandle());
         }
+        totalMessagesDeletedCount.incrementAndGet();
         DeleteMessageResponse.Builder responseBuilder = DeleteMessageResponse.builder();
         responseBuilder.sdkHttpResponse(SdkHttpResponse.builder()
                 .statusCode(200)
