@@ -14,7 +14,7 @@
 
     <properties>
         <module.build.sourceEncoding>UTF-8</module.build.sourceEncoding>
-        <protobuf-java.version>3.19.4</protobuf-java.version>
+        <protobuf-java.version>3.20.0</protobuf-java.version>
     </properties>
 
     <licenses>
