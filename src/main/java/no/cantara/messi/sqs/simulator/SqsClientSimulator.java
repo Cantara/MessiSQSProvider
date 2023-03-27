@@ -2,10 +2,13 @@ package no.cantara.messi.sqs.simulator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.awscore.client.handler.AwsSyncClientHandler;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.SqsServiceClientConfiguration;
 import software.amazon.awssdk.services.sqs.model.BatchEntryIdsNotDistinctException;
 import software.amazon.awssdk.services.sqs.model.BatchRequestTooLongException;
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
@@ -327,5 +330,10 @@ public class SqsClientSimulator implements SqsClient {
                 .build());
         return responseBuilder
                 .build();
+    }
+
+    @Override
+    public final SqsServiceClientConfiguration serviceClientConfiguration() {
+        return  SqsServiceClientConfiguration.builder().build();
     }
 }
