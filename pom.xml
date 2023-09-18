@@ -4,7 +4,7 @@
 
     <groupId>no.cantara.messi</groupId>
     <artifactId>messi-sqs-provider</artifactId>
-    <version>0.8.18-SNAPSHOT</version>
+    <version>0.8.18</version>
     <packaging>jar</packaging>
 
     <name>Messi SQS Provider</name>
@@ -44,7 +44,7 @@
         <connection>scm:git:git://github.com/Cantara/MessiSQSProvider.git</connection>
         <developerConnection>scm:git:git@github.com:Cantara/MessiSQSProvider.git</developerConnection>
         <url>https://github.com/Cantara/MessiSQSProvider/tree/master</url>
-        <tag>HEAD</tag>
+        <tag>messi-sqs-provider-0.8.18</tag>
     </scm>
 
     <dependencyManagement>
