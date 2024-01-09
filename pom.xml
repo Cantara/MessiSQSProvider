@@ -67,7 +67,7 @@
         <dependency>
             <groupId>no.cantara.messi</groupId>
             <artifactId>messi-sdk</artifactId>
-            <version>0.7.39</version>
+            <version>0.7.40</version>
         </dependency>
         <dependency>
             <groupId>no.cantara.config</groupId>
