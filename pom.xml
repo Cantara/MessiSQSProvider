@@ -20,7 +20,7 @@
     
     <properties>
         <module.build.sourceEncoding>UTF-8</module.build.sourceEncoding>
-        <protobuf-java.version>4.26.0</protobuf-java.version>
+        <protobuf-java.version>3.25.3</protobuf-java.version>
     </properties>
 
     <licenses>
@@ -35,7 +35,7 @@
             <name>Kim Christian Gaarder</name>
             <email>kim.christian.gaarder@gmail.com</email>
             <url>https://www.linkedin.com/in/kimchristiangaarder/</url>
-            <organization>Exoreaction AS</organization>
+            <organization>eXOReaction AS</organization>
             <organizationUrl>https://exoreaction.com/</organizationUrl>
         </developer>
     </developers>
