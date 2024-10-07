@@ -12,11 +12,13 @@
     <url>https://github.com/Cantara/MessiSQSProvider</url>
     <inceptionYear>2021</inceptionYear>
 
+    <!--
     <parent>
         <groupId>no.cantara.emi</groupId>
         <artifactId>parent</artifactId>
         <version>8</version>
     </parent>
+    -->
     
     <properties>
         <module.build.sourceEncoding>UTF-8</module.build.sourceEncoding>
