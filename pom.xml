@@ -12,17 +12,9 @@
     <url>https://github.com/Cantara/MessiSQSProvider</url>
     <inceptionYear>2021</inceptionYear>
 
-    <!--
-    <parent>
-        <groupId>no.cantara.emi</groupId>
-        <artifactId>parent</artifactId>
-        <version>8</version>
-    </parent>
-    -->
-    
     <properties>
         <module.build.sourceEncoding>UTF-8</module.build.sourceEncoding>
-        <protobuf-java.version>3.25.5</protobuf-java.version>
+        <protobuf.java.version>4.28.2</protobuf.java.version>
     </properties>
 
     <licenses>
@@ -69,7 +61,7 @@
         <dependency>
             <groupId>no.cantara.messi</groupId>
             <artifactId>messi-sdk</artifactId>
-            <version>0.11.0</version>
+            <version>0.11.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>no.cantara.config</groupId>
@@ -89,12 +81,12 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>${protobuf-java.version}</version>
+            <version>${protobuf.java.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java-util</artifactId>
-            <version>${protobuf-java.version}</version>
+            <version>${protobuf.java.version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -186,8 +178,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <target>1.8</target>
-                    <source>1.8</source>
+                    <release>11</release>
                     <encoding>${module.build.sourceEncoding}</encoding>
                     <meminitial>64m</meminitial>
                     <maxmem>512m</maxmem>
@@ -205,6 +196,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.4.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
