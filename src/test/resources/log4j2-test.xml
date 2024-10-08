@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="0">
+    <Properties>
+        <Property name="LOG_PATTERN">%highlight{%d{HH:mm:ss.SSS} [%t] %-5level %logger{1} - %msg%n}{FATAL=red,
+            ERROR=red, WARN=yellow, INFO=green, DEBUG=blue, TRACE=white}
+        </Property>
+        <Property name="TEST_LOG_LEVEL">TRACE</Property>
+        <Property name="ROOT_LOG_LEVEL">INFO</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT" follow="true">
+            <PatternLayout pattern="${LOG_PATTERN}" disableAnsi="false"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="no.cantara.messi.sqs" level="${sys:log4j2.level:-${env:LOG4J_LEVEL:-${TEST_LOG_LEVEL}}}"
+                additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- Root logger for tests -->
+        <Root level="${sys:log4j2.level:-${env:LOG4J_LEVEL:-${ROOT_LOG_LEVEL}}}">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
