@@ -16,7 +16,7 @@
         <module.build.sourceEncoding>UTF-8</module.build.sourceEncoding>
         <slf4j.version>2.0.17</slf4j.version>
         <log4j2.version>2.24.3</log4j2.version>
-        <protobuf.java.version>4.30.0</protobuf.java.version>
+        <protobuf.java.version>4.30.1</protobuf.java.version>
     </properties>
 
     <licenses>
