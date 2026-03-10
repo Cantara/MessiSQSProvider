@@ -1,0 +1,25 @@
+id: messi-sqs-provider
+name: Messi SQS Provider
+version: 0.8.33-SNAPSHOT
+description: |
+  AWS SQS backend implementation for the Messi event-streaming SDK. Routes Messi
+  producer and consumer calls to Amazon SQS queues, suitable for point-to-point
+  messaging and work distribution patterns.
+units:
+  - id: sqs-client
+    name: SQS Client
+    type: component
+    description: SQSMessiClient — implements MessiClient against Amazon SQS queues.
+    path: src/main/java/no/cantara/messi
+  - id: sqs-producer
+    name: SQS Producer
+    type: component
+    description: SQS message producer with batch send support for throughput efficiency.
+  - id: sqs-consumer
+    name: SQS Consumer
+    type: component
+    description: SQS message consumer with visibility-timeout management for reliable processing.
+  - id: config
+    name: Configuration
+    type: component
+    description: SQS queue URL, AWS credentials, and message visibility timeout configuration.
