@@ -1,4 +1,4 @@
-kcp_version: "0.21"
+kcp_version: "0.26"
 updated: "2026-06-20"
 language: en
 license: "Apache-2.0"
@@ -25,27 +25,23 @@ units:
     type: component
     description: SQSMessiClient — implements MessiClient against Amazon SQS queues.
     path: src/main/java/no/cantara/messi
-      content_hash:
-        algorithm: sha256
-        value: ""
   - id: sqs-producer
     name: SQS Producer
     type: component
     description: SQS message producer with batch send support for throughput efficiency.
-      content_hash:
-        algorithm: sha256
-        value: ""
   - id: sqs-consumer
     name: SQS Consumer
     type: component
     description: SQS message consumer with visibility-timeout management for reliable processing.
-      content_hash:
-        algorithm: sha256
-        value: ""
   - id: config
     name: Configuration
     type: component
     description: SQS queue URL, AWS credentials, and message visibility timeout configuration.
-      content_hash:
-        algorithm: sha256
-        value: ""
+
+# Serving Endpoint Binding (KCP SPEC v0.26 §3.12): authoritative manifest URL
+# and authorized MCP representative. Ignored by pre-0.26 verifiers.
+serving:
+  manifest:
+    - https://raw.githubusercontent.com/Cantara/MessiSQSProvider/main/knowledge.yaml
+  mcp:
+    - https://mcp.cantara.no/mcp
